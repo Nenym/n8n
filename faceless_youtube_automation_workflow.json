@@ -1,0 +1,123 @@
+{
+  "name": "YouTube Faceless Video Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "list",
+        "sheetId": "YOUR_SHEET_ID",
+        "range": "Sheet1!A2:D",
+        "valueRenderMode": "UNFORMATTED_VALUE",
+        "filterByStatus": "pending"
+      },
+      "name": "Google Sheets - Get Scripts",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ],
+      "credentials": {
+        "googleApi": {
+          "id": "1",
+          "name": "Google API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://openrouter.ai/api/v1/audio/deepseek",
+        "method": "POST",
+        "authentication": "headerAuth",
+        "responseFormat": "json",
+        "jsonParameters": true,
+        "options": {},
+        "bodyParametersJson": "{\"text\": \"={{$json[\\\"text\\\"]}}\", \"voice\": \"en-US-male-01\"}"
+      },
+      "name": "Generate Voice - DeepSeek",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        550,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.d-id.com/talks",
+        "method": "POST",
+        "authentication": "headerAuth",
+        "responseFormat": "json",
+        "jsonParameters": true,
+        "options": {},
+        "bodyParametersJson": "{\"script\": {\"type\": \"audio\", \"audio_url\": \"={{$json[\\\"audio_url\\\"]}}\"}, \"config\": {\"fluent\": true, \"pad_audio\": 0.5}}"
+      },
+      "name": "Create Video - D-ID",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        850,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "upload",
+        "fileName": "={{$json[\"video_url\"]}}",
+        "parents": []
+      },
+      "name": "Upload to Google Drive",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 1,
+      "position": [
+        1150,
+        300
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "2",
+          "name": "Google Drive OAuth2 API"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Google Sheets - Get Scripts": {
+      "main": [
+        [
+          {
+            "node": "Generate Voice - DeepSeek",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Voice - DeepSeek": {
+      "main": [
+        [
+          {
+            "node": "Create Video - D-ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Video - D-ID": {
+      "main": [
+        [
+          {
+            "node": "Upload to Google Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "tags": [],
+  "id": "1"
+}
